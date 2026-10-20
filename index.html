@@ -2340,8 +2340,9 @@
         }
 
         document.getElementById('score-text').innerText = `得分: ${score}`;
-	localStorage.setItem('quiz_score', score);
-
+			if (!isWrongMode) {
+  			  localStorage.setItem('quiz_score', score);
+		}
         // 调用 API 生成解析
         const apiKey = document.getElementById('api-key').value.trim();
         if (apiKey) {
@@ -2358,12 +2359,13 @@
     }
 
     // 下一题
-    function nextQuestion() {
-        currentIndex++;
-	localStorage.setItem('quiz_currentIndex', currentIndex);
-        renderQuestion();
+   function nextQuestion() {
+    currentIndex++;
+    if (!isWrongMode) {
+        localStorage.setItem('quiz_currentIndex', currentIndex);
     }
-
+    renderQuestion();
+}
     // 错题本逻辑
     function addToWrongBook(q) {
         const exists = wrongBook.find(item => item["题目"] === q["题目"]);
@@ -2389,8 +2391,13 @@
     // 切换模式
     function toggleMode() {
         isWrongMode = !isWrongMode;
-        currentIndex = 0;
-        score = 0;
+        if (!isWrongMode) {
+    		currentIndex = parseInt(localStorage.getItem('quiz_currentIndex')) || 0;
+    		score = parseInt(localStorage.getItem('quiz_score')) || 0;
+		} else {
+    		currentIndex = 0;
+   		 	score = 0;
+		}
         
         const btn = document.getElementById('toggle-mode-btn');
         const clearBtn = document.getElementById('clear-wrong-btn');
