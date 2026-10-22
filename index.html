@@ -3,2477 +3,449 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>市场调查 · 智能刷题</title>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <title>赛博王妈 · 每个人都是智能世界的总裁</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --border: #e2e8f0; }
-        body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 800px; background: var(--card); padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        .header h1 { margin: 0; font-size: 24px; }
-        .controls { display: flex; gap: 10px; flex-wrap: wrap; }
-        button { cursor: pointer; padding: 8px 16px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; transition: all 0.2s; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: #1d4ed8; }
-        .btn-outline { background: white; border: 1px solid var(--border); color: var(--text); }
-        .btn-outline:hover { background: var(--bg); }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-danger:hover { background: #dc2626; }
-        .status-bar { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; color: #64748b; }
-        .question-text { font-size: 20px; font-weight: bold; margin-bottom: 20px; line-height: 1.5; }
-        .options label { display: flex; align-items: center; padding: 15px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 10px; font-size: 18px; cursor: pointer; transition: all 0.2s; }
-        .options label:hover { background: var(--bg); border-color: #cbd5e1; }
-        .options input[type="radio"] { margin-right: 15px; transform: scale(1.3); cursor: pointer; }
-        .api-section { margin-top: 25px; padding-top: 20px; border-top: 1px dashed var(--border); }
-        .api-input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        .explanation-box { margin-top: 20px; padding: 15px; background: #eff6ff; border-left: 4px solid var(--primary); border-radius: 8px; display: none; font-size: 16px; line-height: 1.6; }
-        .hidden { display: none !important; }
+        body { font-family: 'KaiTi', 'STKaiti', '楷体', 'Microsoft YaHei', serif; background-color: #ffffff; color: #334155; height: 100vh; overflow: hidden; }
+        .main-card { background: #ffffff; border: 2px solid #E0F2FE; box-shadow: 0 10px 40px -10px rgba(59, 130, 246, 0.15); }
+        .bubble-ai { background: #F0F9FF; color: #1e3a8a; border-radius: 0 16px 16px 16px; border: 1px solid #BAE6FD; }
+        .bubble-user { background: #FDF2F8; color: #831843; border-radius: 16px 0 16px 16px; border: 1px solid #FBCFE8; }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+        .btn-pink { background-color: #EC4899; color: white; transition: all 0.2s; }
+        .btn-pink:hover { background-color: #DB2777; }
+        .btn-blue { background-color: #3B82F6; color: white; transition: all 0.2s; }
+        .btn-blue:hover { background-color: #2563EB; }
+        .cursor-blink::after { content: '|'; animation: blink 1s infinite; color: #ec4899; }
+        @keyframes blink { 50% { opacity: 0; } }
+        
+        .virtual-card { background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%); color: white; border-radius: 16px; position: relative; overflow: hidden; box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.4); }
+        .virtual-card::before { content: ''; position: absolute; right: -20px; top: -20px; width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%; }
+        .virtual-card::after { content: ''; position: absolute; right: -60px; bottom: -40px; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%; }
+        
+        .toggle-checkbox:checked { right: 0; border-color: #EC4899; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #EC4899; }
     </style>
 </head>
-<body>
+<body class="flex items-center justify-center p-4">
 
-<div class="container">
-    <div class="header">
-        <h1 id="mode-title">📝 市场调查 · 在线刷题</h1>
-        <div class="controls">
-            <input type="file" id="csv-upload" accept=".csv" class="hidden">
-            <button class="btn-outline" onclick="document.getElementById('csv-upload').click()">📥 导入新题库</button>
-            <button class="btn-outline" id="toggle-mode-btn" onclick="toggleMode()">❌ 查看错题本</button>
-            <button class="btn-danger hidden" id="clear-wrong-btn" onclick="clearWrongBook()">🗑️ 清空错题本</button>
+    <div class="absolute top-5 left-0 w-full text-center z-10 pointer-events-none">
+        <h1 class="text-3xl font-bold text-slate-800 tracking-widest">赛博王妈 · 每个人都是智能世界的总裁</h1>
+        <p class="text-sm text-slate-500 mt-2">「 六大核心场景全覆盖，数据不出浏览器，王妈永不下班 」</p>
+    </div>
+
+    <div class="main-card flex w-full max-w-6xl h-[85vh] rounded-3xl overflow-hidden mt-8 relative z-20">
+        
+        <!-- 左侧：对话区 -->
+        <div class="w-1/2 flex flex-col border-r border-blue-100 bg-white">
+            <div class="p-4 border-b border-blue-50 flex items-center gap-3 bg-blue-50/30">
+                <div class="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center text-pink-500 text-xl font-bold border border-pink-200 shadow-sm">王</div>
+                <div>
+                    <h2 class="font-bold text-lg text-slate-800 tracking-wide">赛博王妈</h2>
+                    <p class="text-xs text-green-500 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500 block animate-pulse"></span> 在线等您吩咐</p>
+                </div>
+            </div>
+            
+            <div id="chatHistory" class="flex-1 p-4 overflow-y-auto space-y-4">
+                <div class="flex gap-3 fade-in">
+                    <div class="w-8 h-8 rounded-full bg-pink-100 flex-shrink-0 flex items-center justify-center text-pink-500 text-xs border border-pink-200">王</div>
+                    <div class="bubble-ai p-3 text-sm leading-relaxed max-w-[85%] shadow-sm">
+                        少爷/小姐，我是王妈。<br>我能帮您<b>【查账单】</b>、<b>【查扣费】</b>、<b>【规划工资】</b>、<b>【锁卡防盗】</b>，您直接吩咐我就行。<br><span class="text-xs text-slate-500 mt-2 block">（试试对我说：“发工资了，发了8500，帮我分配一下”）</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-blue-50 bg-white">
+                <div class="flex gap-2 mb-3 overflow-x-auto pb-1" style="scrollbar-width: none;">
+                    <button class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1.5 rounded-full whitespace-nowrap border border-blue-200" onclick="quickSend('帮我看看上个月的账单分析')">📊 查账单</button>
+                    <button class="text-xs bg-pink-50 hover:bg-pink-100 text-pink-600 px-3 py-1.5 rounded-full whitespace-nowrap border border-pink-200" onclick="quickSend('查一下我所有的自动扣费')">🔄 扣费监控</button>
+                    <button class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1.5 rounded-full whitespace-nowrap border border-blue-200" onclick="quickSend('我发工资了，发了10000，帮我强制分配')">💰 工资分配</button>
+                    <button class="text-xs bg-pink-50 hover:bg-pink-100 text-pink-600 px-3 py-1.5 rounded-full whitespace-nowrap border border-pink-200" onclick="quickSend('我怀疑卡被盗刷了，帮我电子锁卡')">🔒 电子锁卡</button>
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" id="userInput" placeholder="王妈，帮我查查账单..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-pink-400" onkeypress="handleEnter(event)">
+                    <button onclick="sendMessage()" class="btn-pink px-6 py-2 rounded-xl text-sm font-bold shadow-md">发送</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：多功能数据看板 -->
+        <div class="w-1/2 flex flex-col bg-slate-50/50 p-6 relative overflow-y-auto">
+            <div class="absolute top-5 right-6 flex items-center gap-2 z-10">
+                <input type="password" id="apiKey" placeholder="输入 DeepSeek API Key" class="text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 w-48 focus:outline-none focus:border-blue-400 shadow-sm">
+                <button id="testApiBtn" onclick="testApiConnection()" class="text-xs btn-blue px-3 py-2 rounded-lg shadow-sm font-bold">测试连接</button>
+                <div id="apiStatusLight" class="w-3 h-3 rounded-full bg-slate-300 shadow-inner" title="未连接"></div>
+            </div>
+
+            <h3 id="panelTitle" class="text-lg font-bold text-slate-700 mt-12 mb-4 border-l-4 border-blue-500 pl-3">资产与账单看板</h3>
+            
+            <div id="emptyState" class="flex-1 flex flex-col items-center justify-center text-slate-400 mt-20">
+                <svg class="w-16 h-16 mb-4 opacity-30 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                <p>等待王妈为您生成数据...</p>
+            </div>
+
+            <!-- 面板 1：账单分析 -->
+            <div id="panel-bill" class="hidden flex-col h-full">
+                <div id="mainChart" class="w-full h-64 bg-white rounded-xl shadow-sm border border-slate-100 p-2"></div>
+                <div class="mt-4 bg-white p-4 rounded-xl shadow-sm border border-pink-100">
+                    <h4 class="text-sm font-bold text-pink-500 mb-2">💡 王妈温馨提示</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">打工辛苦，吃喝玩乐是应该的。但少爷您的网购比例偏高，王妈建议下个月多留点余粮哦。</p>
+                </div>
+            </div>
+
+            <!-- 面板 2：扣费监控 -->
+            <div id="panel-subscription" class="hidden flex-col h-full">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 space-y-3">
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <h4 class="font-bold text-slate-700">全网自动代扣监控</h4>
+                        <span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">发现 3 处扣费</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                        <div class="flex items-center gap-2"><span class="text-blue-500 text-xl">💬</span><div><p class="text-sm font-bold">微信支付-Apple Store</p><p class="text-xs text-slate-400">每月 1 日自动扣费</p></div></div>
+                        <div class="text-right"><p class="text-sm font-bold text-pink-500">¥ 68.00</p><button class="text-xs text-red-500 underline mt-1" onclick="alert('已取消该订阅')">取消</button></div>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                        <div class="flex items-center gap-2"><span class="text-green-500 text-xl">💬</span><div><p class="text-sm font-bold">支付宝-网易云黑胶</p><p class="text-xs text-slate-400">每月 5 日自动扣费</p></div></div>
+                        <div class="text-right"><p class="text-sm font-bold text-pink-500">¥ 15.00</p><button class="text-xs text-red-500 underline mt-1" onclick="alert('已取消该订阅')">取消</button></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 面板 3：工资强制分配（动态渲染区） -->
+            <div id="panel-salary" class="hidden flex-col h-full">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
+                    <div class="text-center mb-6">
+                        <p class="text-sm text-slate-500">本期规划入账金额</p>
+                        <p class="text-3xl font-bold text-slate-800" id="salary-total-display">¥ 0.00</p>
+                    </div>
+                    <!-- 动态插入进度条的地方 -->
+                    <div id="salary-bars" class="space-y-4"></div>
+                    <button onclick="confirmAction('salary')" class="w-full mt-6 btn-blue py-2 rounded-xl font-bold">确认并一键执行分配</button>
+                </div>
+            </div>
+
+            <!-- 面板 4：电子卡片管理 -->
+            <div id="panel-card" class="hidden flex-col h-full">
+                <div class="virtual-card p-6 h-48 flex flex-col justify-between mb-4">
+                    <div class="flex justify-between items-start">
+                        <svg class="w-8 h-8 text-white/80" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+                        <div class="text-right">
+                            <p class="text-xs opacity-80">微众银行 · 赛博联名卡</p>
+                            <p class="text-sm font-bold">储蓄卡</p>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-2xl tracking-widest mb-1">**** **** **** 8848</p>
+                        <div class="flex justify-between items-end">
+                            <p class="text-xs opacity-80">VALID THRU 12/28</p>
+                            <div class="w-10 h-6 bg-white/20 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <div><p class="font-bold text-sm">💳 交易安全锁</p><p class="text-xs text-slate-400">锁定后无法进行任何消费</p></div>
+                        <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle" id="lock-toggle" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer" onchange="toggleCardLock(this)"/>
+                            <label for="lock-toggle" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <div class="status-bar">
-        <span id="progress-text">进度: 0 / 0</span>
-        <span id="score-text">得分: 0</span>
+    <!-- 网关验证弹窗 -->
+    <div id="securityModal" class="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl p-6 w-[400px] shadow-2xl fade-in border-2 border-blue-100">
+            <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-4">
+                <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-800">微众安全网关（沙盒模拟）</h3>
+                    <p class="text-xs text-slate-400" id="modalSubText">系统检测到操作指令</p>
+                </div>
+            </div>
+            <div class="text-center mb-6">
+                <p class="text-sm text-slate-500 mb-2" id="modalActionText">正在执行操作...</p>
+                <div class="text-3xl font-bold text-slate-800 mb-4 hidden" id="modalAmountBox">¥ <span id="modalAmount">0.00</span></div>
+                <input type="text" id="mockCode" placeholder="输入任意验证码" class="w-40 text-center border-b-2 border-blue-400 focus:outline-none text-lg tracking-widest bg-blue-50/50 py-1 rounded mx-auto block" onkeypress="if(event.key === 'Enter') confirmAction('modal')">
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeModal()" class="flex-1 py-2 rounded-xl text-slate-500 bg-slate-100 hover:bg-slate-200 font-bold">取消</button>
+                <button onclick="confirmAction('modal')" class="flex-1 py-2 rounded-xl text-white btn-blue font-bold">确认验证</button>
+            </div>
+        </div>
     </div>
 
-    <div id="quiz-area">
-        <div class="question-text" id="question-text">加载中...</div>
-        <div class="options" id="options-container"></div>
-        
-        <button class="btn-primary" id="submit-btn" onclick="submitAnswer()" style="width: 100%; margin-top: 15px; padding: 15px; font-size: 18px;">提交答案</button>
-        <button class="btn-primary hidden" id="next-btn" onclick="nextQuestion()" style="width: 100%; margin-top: 15px; padding: 15px; font-size: 18px;">下一题</button>
-        
-        <div class="explanation-box" id="explanation-box"></div>
-    </div>
+    <script>
+        let myChart = null;
+        let isProcessing = false;
 
-    <div id="empty-state" class="hidden" style="text-align: center; padding: 40px; color: #64748b;">
-        错题本空空如也，去全部题库做几道题吧！
-    </div>
+        function handleEnter(e) { if (e.key === 'Enter') sendMessage(); }
 
-    <div class="api-section">
-        <label style="font-size: 14px; font-weight: bold; margin-bottom: 8px; display: block;">DeepSeek API Key (用于生成 AI 解析)</label>
-        <input type="password" id="api-key" class="api-input" placeholder="sk-..." oninput="saveApiKey()">
-    </div>
-</div>
+        async function testApiConnection() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const light = document.getElementById('apiStatusLight');
+            const btn = document.getElementById('testApiBtn');
+            if (!apiKey) return alert("请先填入 Key！");
+            
+            btn.innerText = "连接中...";
+            light.className = "w-3 h-3 rounded-full bg-yellow-400 shadow-inner animate-pulse";
 
-<script>
-    // ==========================================
-    // 1. 此处填入你的 237 道默认题库数据
-    // (如果你原来代码里有，请替换掉这里的 const defaultQuestions = [...])
-    // ==========================================
-    const defaultQuestions = [
-       {
-"题目": "市场调查信息的使用者主要是()",
-"选项A": "政府",
-"选项B": "媒体或大众",
-"选项C": "企业",
-"选项D": "调查公司或机构",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "产品定位研究是用来确定()",
-"选项A": "人们对企业或产品的总体形象",
-"选项B": "用户对企业产品的满意度",
-"选项C": "不同顾客对产品差异以及某些营销变量差异的反映",
-"选项D": "企业的产品与同类产品中其他品牌的优缺点和异同点",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "通过某种方式将产品交给受访者使用，然后再去了解受访者对产品的看法，这种调查称为()",
-"选项A": "产品定位研究",
-"选项B": "市场细分研究",
-"选项C": "产品测试",
-"选项D": "顾客满意度研究",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "辅助型市场调查公司的主要业务是()",
-"选项A": "为企业进行直接的市场调查",
-"选项B": "为企业提供辅助性服务",
-"选项C": "为企业提供各种各样的辅助性服务",
-"选项D": "为企业提供信息咨询",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "进行洗涤用品、清洁用品、个人护肤用品之类的产品测试最好在()",
-"选项A": "街头/闹市中心",
-"选项B": "受访者家中",
-"选项C": "单面镜房间",
-"选项D": "调查公司的办公室",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "与原始资料相比，二手资料的优势在于()",
-"选项A": "含有更多的有效信息",
-"选项B": "易于取得且成本较低",
-"选项C": "可以直接使用而不必作任何处理",
-"选项D": "对企业解决当前的营销问题更有用",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "企业内部二手资料()",
-"选项A": "只包括企业自身的二手资料",
-"选项B": "只包括企业掌握的企业自身其他资料",
-"选项C": "包括企业自身的二手资料和企业掌握的企业自身之外的二手资料",
-"选项D": "包括企业自身的二手资料和企业未掌握的企业二手资料",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "相对于一手资料而言，二手资料()",
-"选项A": "有效信息含量不如一手资料",
-"选项B": "有效信息含量比一手资料更多",
-"选项C": "准确性不如一手资料",
-"选项D": "及时性不如一手资料",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "企业非公开的二手资料包括()",
-"选项A": "企业发展战略、营销计划、活动方案、专业调查研究报告等",
-"选项B": "统计报告、财务报告、审计报告、专业调查研究报告等",
-"选项C": "财务报告、审计报告、活动方案、产品供销存数据库等",
-"选项D": "审计报告、营销计划、活动方案、产品供销存数据库等",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "企业自身的二手资料可分为()",
-"选项A": "内部资料和外部资料",
-"选项B": "资料和非资料",
-"选项C": "长期资料和短期资料",
-"选项D": "公开资料和非公开资料",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "深入访谈最适合研究的问题是()",
-"选项A": "较为大众化的问题",
-"选项B": "较为隐秘的问题",
-"选项C": "不同人之间观点差异较大的问题",
-"选项D": "非专题性的或非技术性的问题",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "对于一些复杂产品的使用效果进行评价，较为适合的调查方法是()",
-"选项A": "观察与实验",
-"选项B": "座谈会",
-"选项C": "深入访谈",
-"选项D": "问卷调查",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "作为一种调查方法，座谈会适合于收集()",
-"选项A": "同研究课题有密切关系的少数人的意见或倾向",
-"选项B": "同研究课题有密切关系的多数人的意见或倾向",
-"选项C": "企业外部的二手资料",
-"选项D": "企业内部的原始资料",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "如果要研究较为隐秘的问题，如个人隐私问题，或者对一些复杂产品的使用效果评价，适合的调查方法是()",
-"选项A": "访谈调查",
-"选项B": "观察与实验",
-"选项C": "座谈会",
-"选项D": "深入访问",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "在座谈会中，应该排除的受访者有()",
-"选项A": "职业座谈会受访者和因报酬而参加座谈会的受访者",
-"选项B": "职业座谈会受访者和具有专业知识的受访者",
-"选项C": "因报酬而参加座谈会的受访者和具有专业知识的受访者",
-"选项D": "因报酬而参加座谈会的受访者和没有专业知识的受访者",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "在复杂的市场竞争中，经营者最难以控制的竞争是()",
-"选项A": "价格竞争",
-"选项B": "新产品竞争",
-"选项C": "销路竞争",
-"选项D": "信息竞争",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "联合国新闻委员会在1999年的年会上提出的\"第四媒体\"是()",
-"选项A": "互联网",
-"选项B": "报纸",
-"选项C": "广播",
-"选项D": "电视",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "定量的趋势预测法有()",
-"选项A": "主观概率",
-"选项B": "季节波动",
-"选项C": "类比推断",
-"选项D": "比例分析",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "做抽样调查时，一般都要划定一些指标和标准，这些指标和标准称为()",
-"选项A": "核心指标",
-"选项B": "分类特征",
-"选项C": "控制特征",
-"选项D": "量化指标",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "产品进入市场后，经营者必须马上()",
-"选项A": "降低价格",
-"选项B": "跟踪市场",
-"选项C": "扩大销路",
-"选项D": "开发新品",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "在正式的市场调研中，收集、整理和分析与市场营销有关的资料和数据的方式，必须是系统的和()",
-"选项A": "详细的",
-"选项B": "定量的",
-"选项C": "集中的",
-"选项D": "客观的",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "市场调查问卷是为搜集数据而设计好的一系列问题，从而使搜集数据程序标准化和()",
-"选项A": "定量化",
-"选项B": "信息化",
-"选项C": "扩大化",
-"选项D": "统一化",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "在大规模市场询问调查前，往往要做一点必不可少的间接调查，称为()",
-"选项A": "专家调查",
-"选项B": "试调查",
-"选项C": "案头工作",
-"选项D": "资料筹备",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "市场调查问卷使搜集数据的程序标准化和统一化，因此市场调查问卷是市场询问调查的()",
-"选项A": "核心工具",
-"选项B": "信息工具",
-"选项C": "定量工具",
-"选项D": "唯一工具",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "入户访问调查是一种极好的询问调查方法，但它的最大问题是()",
-"选项A": "沟通不畅",
-"选项B": "访问量少",
-"选项C": "费用太大",
-"选项D": "代表性差",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "电话调查是一种非常省力、省时的直接调查方法，但它的问题是()",
-"选项A": "代表性差",
-"选项B": "访问量少",
-"选项C": "费用太大",
-"选项D": "沟通不畅",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "神秘调查法是一套规范了的亲身经历的观察方法，主要用来检验()",
-"选项A": "价格问题",
-"选项B": "信息质量",
-"选项C": "服务质量",
-"选项D": "产品质量",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "了解企业在市场中可能遇到的问题，可以利用()",
-"选项A": "预测研究",
-"选项B": "描述研究",
-"选项C": "探索研究",
-"选项D": "因果研究",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "为提高自己在市场中的地位，应该利用()",
-"选项A": "信息爆炸",
-"选项B": "信息平衡",
-"选项C": "信息有序",
-"选项D": "信息权力",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "市场询问调查前的基础工作往往是()",
-"选项A": "成立专家小组",
-"选项B": "指定态度量表",
-"选项C": "进行案头调查",
-"选项D": "进行调查",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "生产要素市场包括()",
-"选项A": "货币市场",
-"选项B": "劳动力市场",
-"选项C": "生产资料市场",
-"选项D": "产品市场",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "市场信息是市场关系的记载，其产生和传递的原因是因为该市场关系()",
-"选项A": "不对称",
-"选项B": "不平衡",
-"选项C": "不合理",
-"选项D": "不合法",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "生活日用品市场调研的结果往往发表在()",
-"选项A": "报纸",
-"选项B": "电视",
-"选项C": "广播",
-"选项D": "互联网",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "市场调查就是搜集、整理和分析与市场营销有关的资料和数据，其搜集数据的程序必须系统，搜集数据的态度必须是()",
-"选项A": "详尽的",
-"选项B": "认真的",
-"选项C": "客观的",
-"选项D": "谨慎的",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "委托型市场调查公司是受客户的委托进行特定项目的市场调查，它们负责设计调查方案并进行调查，但调查报告的知识产权属于()",
-"选项A": "客户",
-"选项B": "政府",
-"选项C": "调查公司",
-"选项D": "媒体或大众",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "服务型市场调查公司的主要业务是()",
-"选项A": "定期搜集有关市场信息并将信息出售给用户",
-"选项B": "定期搜集有关市场信息并为用户撰写调查报告",
-"选项C": "专门进行市场信息的搜集",
-"选项D": "为其他市场调查公司提供辅助性服务",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "专家小组为技术含量高的新产品作上市前的预测，常用的作法是()",
-"选项A": "经验判断",
-"选项B": "态度量表",
-"选项C": "案头调查",
-"选项D": "调查",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "访问调查的主要优点是()",
-"选项A": "回答率较高、调查结果较为准确、对调查人员容易控制",
-"选项B": "回答率较高、调查结果较为准确、可使用较复杂的问卷",
-"选项C": "调查成本较低、可使用较复杂的问卷、对调查人员容易控制",
-"选项D": "调查成本较低、调查结果较为准确、可消除受访者的心理压力",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "访谈调查法可以分为定量调查方法和定性调查方法，下列不属于定量调查方法的是()",
-"选项A": "访问调查",
-"选项B": "座谈会",
-"选项C": "电脑辅助调查",
-"选项D": "邮寄调查",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "下列各调查方法中属于定性调查的是()",
-"选项A": "访问调查和邮寄调查",
-"选项B": "邮寄调查和电话调查",
-"选项C": "观察调查与实验调查",
-"选项D": "座谈会和个别深访",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "市场调查的两个关键环节是()",
-"选项A": "确定总体和抽样样本",
-"选项B": "实地调查和数据处理",
-"选项C": "问卷设计和抽样设计",
-"选项D": "问卷设计和实地调查",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "饼状图主要适合于显示()",
-"选项A": "变量值在不同空间点上的差异",
-"选项B": "变量值在不同时间点上的差异",
-"选项C": "单元不太多的结构分布",
-"选项D": "不同样本间分布差异的比较",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "将一组受访者视作一个抽样单位而不是个体的抽样方法称为()",
-"选项A": "简单随机抽样",
-"选项B": "分层抽样",
-"选项C": "整群抽样",
-"选项D": "系统抽样",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "对访问调查进行质量复核的标准是()",
-"选项A": "访谈是否按规定的方式进行、访员有无作假",
-"选项B": "问卷上的问题是否回答完整",
-"选项C": "访员是否询问了问卷上的所有问题",
-"选项D": "问卷上的问题回答是否正确",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "使用单向统计表需要解决的一个问题是()",
-"选项A": "选择表格形式",
-"选项B": "选择百分比的基数",
-"选项C": "安排表格结构",
-"选项D": "选择数据形式",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "市场调查人员开始调查时()",
-"选项A": "总是先搜集第二手资料，再决定是否需要搜集第一手资料",
-"选项B": "总是先搜集第一手资料，再决定是否需要搜集第二手资料",
-"选项C": "有时是先搜集第二手资料，有时先搜集第一手资料",
-"选项D": "只是搜集第一手资料",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "在对实际问题的分析中，标准差比方差用的更多，因为()",
-"选项A": "标准差的计算比较简单",
-"选项B": "标准差比方差更为准确",
-"选项C": "标准差与变量值有相同的计量单位、实际意义更清楚",
-"选项D": "标准差没有计量单位",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "用于检验线形回归方程可信度的统计量等于()",
-"选项A": "回归平方和除以残差平方和",
-"选项B": "残差平方和除以回归平方和",
-"选项C": "平均回归平方和除以平均残差平方和",
-"选项D": "平均残差平方和除以平均回归平方和",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "市场调查报告要发挥其应有的作用，除了必须说明一切必要的细节、能发挥参考作用外，还必须()",
-"选项A": "能够证明调查研究结果的可信性",
-"选项B": "详细说明调查的具体过程",
-"选项C": "详细论证调查方法的科学性",
-"选项D": "能够证明调查结论的可行性",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "抽样效率是指两个抽样方案在样本容量相同的情况下的()",
-"选项A": "样本均值之比",
-"选项B": "抽样平均误差之比",
-"选项C": "样本比例之比",
-"选项D": "抽样方差之比",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "产品质量常可分为1级、2级和3级，这种表现产品等级的数据是()",
-"选项A": "定量数据",
-"选项B": "顺序数据",
-"选项C": "数值数据",
-"选项D": "定性数据",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "将总体分成若干个子总体，然后在每个子总体进行随机抽样的叫做？()",
-"选项A": "整群抽样",
-"选项B": "简单随机抽样",
-"选项C": "分层抽样",
-"选项D": "系统抽样",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "电视机常用的20TVC是()",
-"选项A": "表意式文字编码法",
-"选项B": "顺序编码法",
-"选项C": "信息组码编码法",
-"选项D": "分组编码法",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "根据如下样本数据之茎叶图，关于样本数据的分配，下列哪一个答案是正确的？()",
-"选项A": "为对称分配",
-"选项B": "为右偏分配",
-"选项C": "平均数大于中位数",
-"选项D": "有离群值",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "有一组样本数据其茎叶图如下，下列叙述何者不正确？()",
-"选项A": "是一个左偏的分配",
-"选项B": "中位数为31",
-"选项C": "平均数介于25与31之间",
-"选项D": "样本数为40",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "投影法来自于临床心理学。它是探究隐藏在表面下真实心理，以获知真实的情感、()",
-"选项A": "叛逆",
-"选项B": "意图和动机",
-"选项C": "战略目标",
-"选项D": "营销目标",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "完全随机设计方差分析中从总变异中分出组间变异和组内变异是指()",
-"选项A": "从组间的离均差平方和分出组间和组内离均差平方和",
-"选项B": "从组内离均差平方和分出各组的离均差平方和",
-"选项C": "从总均方中分出组间均方和组内均方",
-"选项D": "从总均数的离均差平方和分出组间离均差平方和和组内离均差平方和",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "5个企业的某月销售收入（万元）数据为：73、74、75、76、77，则这组数据的平均差系数为()",
-"选项A": "1.45",
-"选项B": "1.2",
-"选项C": "75",
-"选项D": "1.6",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "关于正态分布，以下陈述正确的是()",
-"选项A": "偏态系数为1",
-"选项B": "平均数不为负数",
-"选项C": "为一个双峰分布",
-"选项D": "峰度系数为3",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "下面关于设计效应的叙述，错误的是()",
-"选项A": "分层抽样的设计效应大于1",
-"选项B": "整群抽样的设计效应大于1",
-"选项C": "简单随机抽样的设计效应等于1",
-"选项D": "多阶段抽样的设计效应大于1",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "在收集电视收视率数据的几种方法中，成本最高的是()",
-"选项A": "个人采访回忆法",
-"选项B": "日记法",
-"选项C": "仪表法",
-"选项D": "电话采访回忆法",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "下列说法中，属于电话调查优点的是()",
-"选项A": "可以进行深入的调查",
-"选项B": "成功率很高",
-"选项C": "抽样总体和目标总体是一致的",
-"选项D": "节约时间",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "随机变量中，出现次数最多的变量值是该变量的()",
-"选项A": "极值",
-"选项B": "中位数",
-"选项C": "众数",
-"选项D": "均值",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "统计一词有多种含义，其中一种含义指的是统计数据的搜集活动，即()",
-"选项A": "统计数据",
-"选项B": "统计工作",
-"选项C": "抽样方法",
-"选项D": "统计学",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "()被认为是结合了面谈访问与邮寄访问特点的一种方法",
-"选项A": "个别深度访谈",
-"选项B": "询问访问",
-"选项C": "留置问卷访问",
-"选项D": "电话访问法",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "研究者应该测试回答问题的时间，在街上拦截或电话调查的问卷，如果访问时间超过()分钟，就应考虑删减",
-"选项A": "20",
-"选项B": "30",
-"选项C": "10",
-"选项D": "5",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "影响样本单位数的主要因素是：总体标志变异程度、极限误差的大小、抽样方式与组织方式的不同、人力物力财力的可能条件以及()",
-"选项A": "抽样推断的可靠程度",
-"选项B": "时间期限",
-"选项C": "总体单位的分布",
-"选项D": "总体单位的个数",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "为了研究儿童的成长发育状况，随机抽取了36名儿童，测得平均身高为120CM，标准差为9，抽样标准误差为1.5，则下列各项中正确的是()",
-"选项A": "抽样标准误差是样本均值的标准差",
-"选项B": "抽样标准误差是总体数据的标准差",
-"选项C": "抽样标准误差是抽样产生的实际误差",
-"选项D": "抽样标准误差是样本数据的标准差",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "若随机变量服从正态分布，从中随机抽取样本，则服从的分布为()",
-"选项A": "F分布",
-"选项B": "t分布",
-"选项C": "近似正态分布",
-"选项D": "标准正态分布",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "在总体参数的假设检验中，如果假设检验P值小于给定的显著性水平α，则应()",
-"选项A": "拒绝原假设",
-"选项B": "拒绝备择假设",
-"选项C": "接受备择假设",
-"选项D": "不能拒绝原假设",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "众数和中位数是()",
-"选项A": "算术平均数",
-"选项B": "位置平均数",
-"选项C": "动态平均数",
-"选项D": "数值平均数",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "如果要对子总体进行推断，则应采用()",
-"选项A": "简单随机抽样",
-"选项B": "分层抽样",
-"选项C": "系统抽样",
-"选项D": "整群抽样",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "欲统计某物品的数量占总数量的比重，一般而言采哪种统计图形较佳？()",
-"选项A": "折线图",
-"选项B": "圆饼图",
-"选项C": "直方图",
-"选项D": "散布图",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "针对()的调查是属于企业不可控制的",
-"选项A": "竞争对手",
-"选项B": "产品",
-"选项C": "渠道",
-"选项D": "价格",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "以下哪种无回答对调查结果的影响比较大()",
-"选项A": "漏填一个问题",
-"选项B": "不在家",
-"选项C": "拒访",
-"选项D": "由于客观原因（如生病）无法填写",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "观察法是指研究者根据一定的研究目的，用自己的感官和()去直接观察被研究对象，从而获得资料的一种方法",
-"选项A": "录音机",
-"选项B": "摄像机",
-"选项C": "辅助工具",
-"选项D": "统计方法",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "平均数是将总体内各单位数量差异()",
-"选项A": "抽象化",
-"选项B": "形象化",
-"选项C": "一般化",
-"选项D": "具体化",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "现象之间的相互关系可以归纳为两种类型，即()",
-"选项A": "函数关系和因果关系",
-"选项B": "相关关系和函数关系",
-"选项C": "相关关系和因果关系",
-"选项D": "相关关系和随机关系",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "关于市场调查和市场预测，以下说法错误的是()",
-"选项A": "从时间连续性来看二者是一项连贯的工作",
-"选项B": "市场调查和市场预测可以分别作为一门学科且二者联系密切",
-"选项C": "从方法论的角度看市场预测有赖于市场调查",
-"选项D": "市场调查和市场预测是同一门学科",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "数据分析的目的是()",
-"选项A": "解决其他学科不能解决的数据分析问题",
-"选项B": "从数据中发现规律并依据相关学科解释数据",
-"选项C": "根据客户的需要提供所要的结论",
-"选项D": "为\"预设结论\"寻找支持",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "如果估计量的数学期望等于被估参数，则该统计量被称为被估参数的()",
-"选项A": "无偏估计量",
-"选项B": "充分估计量",
-"选项C": "有效估计量",
-"选项D": "一致估计量",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "在试验设计中，当考察某个因素各个水平的效应时，要求其他因素应保持相同的水平，这一原则被称为()",
-"选项A": "整齐可比性原则",
-"选项B": "对称统一性原则",
-"选项C": "同质不变性原则",
-"选项D": "均衡分散性原则",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "()是利用企业内部和外部现有的各种信息、情报资料，根据调研任务的需要进行信息收集并加以分析研究的一种调查方法",
-"选项A": "市场调研",
-"选项B": "直接调查",
-"选项C": "文案调查",
-"选项D": "抽样调查",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "()是指在提出问题时不提供任何答案，由被调查者根据实际情况自由填写",
-"选项A": "指导性问题",
-"选项B": "开放式问题",
-"选项C": "实质性问题",
-"选项D": "封闭性问题",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "典型相关分析中，第一对线性组合变量之间的关系具有什么特点()",
-"选项A": "不相关",
-"选项B": "相互独立",
-"选项C": "具有最大的相关性",
-"选项D": "具有一定的相关性",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "某企业关注如何能以最低的广告费用求得最大的媒体影响力，这时应开展()",
-"选项A": "广告媒体调查",
-"选项B": "公共关系调查",
-"选项C": "广告诉求调查",
-"选项D": "营业推广调查",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "下列陈述中，不属于观察法缺点的是()",
-"选项A": "调查时间比较长、调查经费支出大",
-"选项B": "容易受语言交流或人际交往可能发生的误会的影响",
-"选项C": "只能反映客观事实的发生经过、不能说明发生的原因和动机",
-"选项D": "对调查人员的业务水平要求较高",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "两个班级的数学成绩如下：甲班54、56、65、67、69、70、70、72、77、78、82、85、93；乙班58、65、66、70、71、71、74、74、75、77、77、77、78、79、80、82、82，甲班与乙班哪班数学成绩的差异较大？()",
-"选项A": "乙班较大",
-"选项B": "两者相等",
-"选项C": "无法比较",
-"选项D": "甲班较大",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "()是实施调查项目的蓝图，设计市场调查活动的各个方面，包括获取信息的详细过程",
-"选项A": "抽样方案",
-"选项B": "调查方案",
-"选项C": "调查报告",
-"选项D": "调查问卷",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "非参数检验与参数检验的主要区别是()",
-"选项A": "非参数检验不要求知道总体的分布",
-"选项B": "参数检验不要求知道总体的分布",
-"选项C": "非参数检验一定要求总体是正态分布",
-"选项D": "参数检验一定要求总体是正态分布",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "某企业甲、乙两车间2014年的平均工资分别为4500元和4600元，2015年两车间的工资水平未变，而甲车间人数增长15%，乙车间人数增长8%，则2015年甲、乙两车间工人的总平均工资比2014年()",
-"选项A": "提高",
-"选项B": "降低",
-"选项C": "可能提高也可能降低",
-"选项D": "保持不变",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "用正态总体Z检验法对一个总体比例进行检验时，所用的样本应是一个()",
-"选项A": "随机抽样的小样本",
-"选项B": "配额抽样的大样本",
-"选项C": "配额抽样的小样本",
-"选项D": "随机抽样的大样本",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "调查表一般由()、表体和表外附加三个部分组成",
-"选项A": "横线",
-"选项B": "文字",
-"选项C": "数字",
-"选项D": "表头",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "下列描述直方图与条形图差别的说法不正确的是()",
-"选项A": "条形图用高度表示类别变化的多少、宽度则固定表示类别",
-"选项B": "直方图中的矩形用高度表示频数或频率、用宽度表示各组组距",
-"选项C": "条形图用于展示分类数据、直方图用于展示数值型数据",
-"选项D": "直方图的各矩形和条形图的各条形都是连续排列的",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "当抽样方式与样本容量不变的条件下，置信区间越大则使()",
-"选项A": "可靠性越大",
-"选项B": "可靠性越小",
-"选项C": "估计的误差越小",
-"选项D": "可靠性及估计误差均越小",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "在制作一个次数分配表时，组宽（或组距）的决定比较接近于下列哪一个选项？()",
-"选项A": "(数据最大值-数据最小值）/组数，数据最大值/组数，(数据最大值-数据最小值）/2，(数据最大值-数据最小值）/数据数",
-"选项B": "选项A",
-"选项C": "",
-"选项D": "",
-"正确答案": "",
-"解析": ""
-},
-{
-"题目": "在非参数检验中关于两个独立样本的Mann-Whitney U检验是检验()",
-"选项A": "两个总体方差是否相等的常用方法",
-"选项B": "两个总体中位数是否相等的常用方法",
-"选项C": "两个总体众数是否相等的常用方法",
-"选项D": "两个总体平均数是否相等的常用方法",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "德尔菲法的优点不包括()",
-"选项A": "匿名性",
-"选项B": "反馈性",
-"选项C": "量化性",
-"选项D": "客观性",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "问卷中甄别部分的主要目的是()",
-"选项A": "确保问卷的完整性",
-"选项B": "确保问卷的回收率",
-"选项C": "确保调查结果准确",
-"选项D": "确保被调查者符合要求",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "在其他条件不变的情况下，提高抽样估计的可靠程度，其精确程度将()",
-"选项A": "随之扩大",
-"选项B": "不能确定",
-"选项C": "保持不变",
-"选项D": "随之缩小",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "为了利用样本比例估计总体比例而进行抽样，现需确定必要样本量。但没有可依据的历史数据或类似调查的数据，设定的比例应为()",
-"选项A": "0.05",
-"选项B": "0.5",
-"选项C": "0.25",
-"选项D": "0.75",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "下列调查方法中，调查员不与调查对象直接接触的是()",
-"选项A": "深度访谈调查",
-"选项B": "面访调查",
-"选项C": "媒体调查",
-"选项D": "电话调查",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "以下方法中，不属于投影技法的是()",
-"选项A": "完成技法",
-"选项B": "头脑风暴法",
-"选项C": "角色扮演法",
-"选项D": "联想技法",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "下列对于调查访问员的建议，正确的是()",
-"选项A": "应当对调查对象清楚地提问问卷上的每一个问题",
-"选项B": "在必要的情况下可以适当根据访问的进展调整题目顺序",
-"选项C": "提问时应当根据自己的理解将问题展开",
-"选项D": "进行追问时可以谈谈自己的看法以促使被调查者进一步回答",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "下列属于随机抽样方法的是？()",
-"选项A": "偶遇抽样",
-"选项B": "滚雪球抽样",
-"选项C": "分层抽样",
-"选项D": "配额抽样",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "进行相关分析，要求相关的两个变量()",
-"选项A": "都是随机的",
-"选项B": "一个是随机的、一个不是随机的",
-"选项C": "都不是随机的",
-"选项D": "随机和不随机都可以",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "调查问卷的选项需遵循的基本原则是()",
-"选项A": "易懂",
-"选项B": "互不包含性",
-"选项C": "简单",
-"选项D": "合理性",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "在问卷设计中，如果有\"您明年打算不开车，而乘公共汽车上班吗？\"这样的问题，其主要缺点是()",
-"选项A": "问题具有意义双关的含义",
-"选项B": "问题的措辞不具体",
-"选项C": "问题具有敏感性",
-"选项D": "问题具有引导性",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "对数据离中趋势的研究，通常需要计算反映数据差异程度的数值，如全距、平均差、标准差和()等",
-"选项A": "众数",
-"选项B": "平均数",
-"选项C": "中位数",
-"选项D": "离散系数",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "在样本框中每隔一定距离抽选一个受访者，这种抽样方式称为()",
-"选项A": "分层抽样",
-"选项B": "整群抽样",
-"选项C": "简单随机抽样",
-"选项D": "系统抽样",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "若设总体方差σ²=120，采用重复抽样抽取样本容量为10的一个样本，则样本均值的方差为()",
-"选项A": "12",
-"选项B": "1.2",
-"选项C": "1200",
-"选项D": "120",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "非参数检验方法不包括()",
-"选项A": "极端反应检验",
-"选项B": "K-S检验",
-"选项C": "游程检验",
-"选项D": "T检验",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "问卷测试有很多好处，下面不属于问卷测试好处的是()",
-"选项A": "有利于问卷中的数据编码和录入",
-"选项B": "有利于收集到正确的数据",
-"选项C": "对被调查者和调查者有友好的界面",
-"选项D": "有利于确定被调查的选取",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "随意抽样假定总体是()",
-"选项A": "没有差异的",
-"选项B": "均匀地或随机分布的",
-"选项C": "差异足够大的",
-"选项D": "没有偏差的",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "方差分析要求资料()",
-"选项A": "服从正态分布、各组方差齐性",
-"选项B": "服从F分布、各组方差齐性",
-"选项C": "服从正态分布、各组方差非齐性",
-"选项D": "服从F分布、各组方差非齐性",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "统计表的结构从形式上看包括()、横行题目、纵栏题目、数字资料四个部分",
-"选项A": "计量单位",
-"选项B": "附录",
-"选项C": "总标题",
-"选项D": "指标注释",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "1=小于2000元，2=2000~4000元，3=4000~6000元，4=6000元以上，这种编码方式属于()",
-"选项A": "顺序编码法",
-"选项B": "分组编码法",
-"选项C": "信息组码编码法",
-"选项D": "表意式文字编码法",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "关于某开放性问题，假设回答极为分散，应该()",
-"选项A": "挑出部分答案编码",
-"选项B": "不编码",
-"选项C": "全部编码",
-"选项D": "无所谓",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "抽样方式大体可分为随机抽样和()",
-"选项A": "分层抽样",
-"选项B": "系统抽样",
-"选项C": "简单随机抽样",
-"选项D": "非随机抽样",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "将某居民小区的4000户居民从1—4000编号，在1—100号中随机抽取1个号码3，那么3、103、203……3903组成抽样调查样本，如此的抽样方式为()",
-"选项A": "简单随机抽样",
-"选项B": "系统随机抽样",
-"选项C": "分层抽样",
-"选项D": "整群抽样",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "回归分析中利用的距离是点到直线的垂直坐标距离。最小二乘准则是指()",
-"选项A": "使｜Σ（yi-ŷi）｜达到最小值",
-"选项B": "使Σ｜yi-ŷi｜达到最小值",
-"选项C": "使max｜yi-ŷi｜达到最小值",
-"选项D": "使Σ（yi-ŷi）²达到最小值",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "回归分析中概念的()",
-"选项A": "说明变量和被说明变量都是随机变量",
-"选项B": "解释变量为非随机变量、被解释变量为随机变量",
-"选项C": "解释变量和被解释变量都为非随机变量",
-"选项D": "解释变量为随机变量、被解释变量为非随机变量",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "经常使用的测度变量之间相关关系的直观方式有()",
-"选项A": "直方图法",
-"选项B": "散点图法",
-"选项C": "折线图法",
-"选项D": "饼状图法",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "当偏度系数等于0时，该分布属于()",
-"选项A": "对称分布",
-"选项B": "右偏分布",
-"选项C": "左偏分布",
-"选项D": "无法确定",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "用最小二乘法配合趋势方程必须满足下面要求()",
-"选项A": "趋势值与观察值离差之和小于零",
-"选项B": "趋势值与观察值之和为零",
-"选项C": "趋势值与观察值离差之和最小",
-"选项D": "趋势值与观察值离差平方和最小",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "某校高三年级学生共1000人参加考试，将1000份试卷编好号码后，从中随机抽取30份计算平均成绩，此种抽样方式为()",
-"选项A": "简单随机抽样",
-"选项B": "系统随机抽样",
-"选项C": "分层抽样",
-"选项D": "整群抽样",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "()也被称为判定抽样",
-"选项A": "任意抽样",
-"选项B": "非随机抽样",
-"选项C": "抽样估计",
-"选项D": "主观抽样",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "持续生产的电子管厂，产品质量检查是如此安排的：在一天中每隔半小时抽取一次产品进行查验，这是()",
-"选项A": "分层抽样",
-"选项B": "简单随机抽样",
-"选项C": "整群抽样",
-"选项D": "系统抽样",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "在固定样本持续调查法中，为了保证样本的代表性和资料的持续性，又能减轻调查户的负担，可采取()",
-"选项A": "样本轮换",
-"选项B": "任意抽样",
-"选项C": "判断抽样",
-"选项D": "配额抽样",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "以下关于抽样概念的表述，错误的选项是()",
-"选项A": "样本量是总体中包括的样本单元的个数",
-"选项B": "总体是调查对象的全体",
-"选项C": "样本是总体的一部分",
-"选项D": "抽样框是供抽样所用的包含所有抽样单元的名录",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "若是抽选10人作样本，抽选方式是从165公分及以下的人中随机抽取2人、在180公分及以上的人中随机抽取2人、在165—180公分的人中随机抽取6人，这种抽取的方式称为()",
-"选项A": "简单随机抽样",
-"选项B": "系统抽样",
-"选项C": "分层抽样",
-"选项D": "整群抽样",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "依照分组数据计算的偏态系数为-0.425，它表示()",
-"选项A": "这组数据的分布是右偏且偏斜程度不大",
-"选项B": "这组数据的分布是左偏且偏斜程度不大",
-"选项C": "这组数据的分布是右偏且偏斜程度较大",
-"选项D": "这组数据的分布是左偏且偏斜程度较大",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "当调查总体中各单位之间差异较小，或调查对象不明、难以分组分类时，适用的抽样技术是()",
-"选项A": "简单随机抽样",
-"选项B": "系统抽样",
-"选项C": "配额抽样",
-"选项D": "分层随机抽样",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "()是先将调查总体的每一个单位编上号码，然后将号码写在卡片上搅拌均匀，任意从中抽选，选到一个号码就对上一个单位，直到抽足预先规定的样本数量为止",
-"选项A": "乱数表法",
-"选项B": "直接抽取法",
-"选项C": "抽签法",
-"选项D": "图表法",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "以下属于随机抽样方式的是？()",
-"选项A": "分层抽样",
-"选项B": "配额抽样",
-"选项C": "滚雪球抽样",
-"选项D": "偶遇抽样",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "用样本的矩去估计总体的矩，从而取得有关参数的估计量，称之为()",
-"选项A": "矩估计法",
-"选项B": "点估计法",
-"选项C": "最小二乘法",
-"选项D": "最大似然估计法",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "回归分析中，自变量和因变量的性质是()",
-"选项A": "自变量是随机的、因变量不是随机的",
-"选项B": "自变量不是随机的、因变量是随机的",
-"选项C": "自变量因变量都是随机的",
-"选项D": "自变量因变量都不是随机的",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "以下指标中，最容易受极端值影响的是()",
-"选项A": "中位数",
-"选项B": "平均数",
-"选项C": "众数",
-"选项D": "四分位数",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "若是统计表中数据的单位都一致，咱们能够把单位填写在()",
-"选项A": "右上角",
-"选项B": "左上角",
-"选项C": "左下角",
-"选项D": "右下角",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "某企业为了研究客户中意度，需抽取一些客户进行调查，以便于推断全数客户的中意度，该企业能够采纳的调查方式有()",
-"选项A": "方便抽样",
-"选项B": "分层抽样",
-"选项C": "判断抽样",
-"选项D": "配额抽样",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "以下抽样技术中，属于随机抽样的技术是()",
-"选项A": "任意抽样技术",
-"选项B": "系统抽样技术",
-"选项C": "判断抽样技术",
-"选项D": "配额抽样技术",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "在样本容量确定的进程中，以下哪句是错误的()",
-"选项A": "整体所起的作用视其规模的大小而有所不同",
-"选项B": "大总体的规模对样本容量确定起重要作用",
-"选项C": "对于中等规模的总体其作用中等重要",
-"选项D": "小规模总体的大小对样本容量确定起重要作用",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "假设两个总体均服从正态分布，别离从两个总体中随机抽取样本，那么两个样本方差之比服从的分布为()",
-"选项A": "正态分布",
-"选项B": "卡方分布",
-"选项C": "t分布",
-"选项D": "F分布",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "以下用于测度数据离散程度的相对指标是()",
-"选项A": "四分位差",
-"选项B": "方差",
-"选项C": "标准差",
-"选项D": "离散系数",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "由于抽取样本的随机性造成的误差是()",
-"选项A": "无回答误差",
-"选项B": "测量误差",
-"选项C": "抽样框误差",
-"选项D": "抽样误差",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "下面几种抽样方式中，抽样单元和总体大体单元不一致的是()",
-"选项A": "简单随机抽样",
-"选项B": "整群抽样",
-"选项C": "分层抽样",
-"选项D": "系统抽样",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "描述顺序数据集中趋势的指标有()",
-"选项A": "中位数与分位数",
-"选项B": "中位数与平均数",
-"选项C": "平均数与分位数",
-"选项D": "平均数与众数",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "在回归模型ŷ=β0+β1x+ε中，ε反映的是()",
-"选项A": "由于x的变化引发的y的线性变化部分",
-"选项B": "由于y的变化引发的x的线性变化部分",
-"选项C": "除x和y的线性关系之外的随机因素对y的影响",
-"选项D": "由于x和y的线性关系对y的影响",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "为了了解某地域职工家庭生活状况，调查时将职工家庭按居委会分组，并以居委会为单位进行简单随机抽样，再对抽中的居委会所辖每户职工家庭进行调查，这种调查组织方式为()",
-"选项A": "多阶抽样",
-"选项B": "系统随机抽样",
-"选项C": "分层随机抽样",
-"选项D": "整群抽样",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "确信市场调查样本量时应采取的原那么是()",
-"选项A": "样本量越大越好",
-"选项B": "费用越低越好",
-"选项C": "调查越省时越好",
-"选项D": "综合考虑各方面因素达到最优组合",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "测量抽样误差最经常使用的指标是()",
-"选项A": "标准差",
-"选项B": "抽样方差",
-"选项C": "变异系数",
-"选项D": "置信区间",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "抽样调查时若是测量的指标很多，那么在确信样本量时应选择()",
-"选项A": "变异程度最小的指标",
-"选项B": "变异程度最大的指标",
-"选项C": "均值最大的指标",
-"选项D": "均值最小的指标",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "现有某公司2007年各季度在各地域销售各类产品的情形，数据库的四个字段是：地域、季度、商品、销售额。若是要反映各类商品在各地域和各季度的销售情形，应该绘制()",
-"选项A": "地域、季度和商品的三维透视图",
-"选项B": "地区和商品的二维透视图",
-"选项C": "地区、季度和销售额的三维透视图",
-"选项D": "季度和商品的二维透视图",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "为了解某地域消费者的消费水平，从该地域全数消费者中随机抽取500名，取得这500名消费者的月消费额的散布，那么该散布称为()",
-"选项A": "抽样散布",
-"选项B": "总体分布",
-"选项C": "样本分布",
-"选项D": "随机散布",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "从10000个家庭顶用简单随机抽样方式抽取1000个家庭作样本，设Xi为第i个家庭的人数，μ表示整体数学期望，x̄表示样本的均值，那么E(x̄）与μ的关系是()",
-"选项A": "必然相等",
-"选项B": "在大多数情况下相等",
-"选项C": "偶尔相等",
-"选项D": "一定不相等",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "市场调查中最多见的非概率抽样调查是()",
-"选项A": "随意抽样",
-"选项B": "志愿者抽样",
-"选项C": "配额抽样",
-"选项D": "判断抽样",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "当抽样方式与样本容量不变的条件下，置信区间越大那么使()",
-"选项A": "靠得住性越大",
-"选项B": "可靠性越小",
-"选项C": "估计的误差越小",
-"选项D": "可靠性及估计误差均越小",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "非随机抽样不包括()",
-"选项A": "判定抽样",
-"选项B": "系统抽样",
-"选项C": "任意抽样",
-"选项D": "配额抽样",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "以下分组中哪个是按品质标志分组（)",
-"选项A": "产品按品种分组",
-"选项B": "家庭按年收入水平分组",
-"选项C": "企业按年生产能力分组",
-"选项D": "人口按年龄分组",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "离散程度是指()",
-"选项A": "变量值的变异范围",
-"选项B": "变量值的平均水平",
-"选项C": "变量值的分配",
-"选项D": "变量值的大小",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "一组数据中显现次数最多的变量值称为()",
-"选项A": "平均数",
-"选项B": "众数",
-"选项C": "中位数",
-"选项D": "标准差",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "依照最小二乘法拟合直线回归方程是使()",
-"选项A": "Σ（yi-ŷi）=最小",
-"选项B": "Σ（yi-ŷi）²=最小",
-"选项C": "Σ（yi-ȳ）=最小",
-"选项D": "Σ（yi-ȳ）²=最小",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "比例与比例方差的关系是()",
-"选项A": "比例的数值越接近于1比例的方差越大",
-"选项B": "比例的数值越接近于0比例的方差越大",
-"选项C": "比例的数值越接近于0.5比例的方差越大",
-"选项D": "比例的数值越大比例的方差越大",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "受极端数值阻碍最大的变异指标是()",
-"选项A": "极差",
-"选项B": "方差",
-"选项C": "平均差",
-"选项D": "标准差",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "非抽样误差()",
-"选项A": "仅在抽样调查中存在",
-"选项B": "仅在普查中存在",
-"选项C": "在抽样调查和普查中都存在",
-"选项D": "在抽样调查和普查中都不存在",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "在统计调查方式中，邮寄调查属于()",
-"选项A": "实验法",
-"选项B": "报告法",
-"选项C": "询问调查法",
-"选项D": "网上调查法",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "中标后，除不可抗力外，招标单位拒绝与中标单位签定合同，应()",
-"选项A": "补偿损失",
-"选项B": "双倍返回投标保证金",
-"选项C": "返回投标保证金",
-"选项D": "返回履约保证金",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "市场调查问卷的设计使搜集数据标准化和()",
-"选项A": "信息化",
-"选项B": "定量化",
-"选项C": "扩大化",
-"选项D": "统一化",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "此刻你利用什么牌子的洗衣粉？是()",
-"选项A": "事实性问题",
-"选项B": "动机性问题",
-"选项C": "态度性问题",
-"选项D": "假设性问题",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "当相关系数r=0时，说明()",
-"选项A": "现象之间相关程度较小",
-"选项B": "现象之间完全相关",
-"选项C": "现象之间无直线相关",
-"选项D": "现象之间完全无关",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "适用于聚类分析的数据类型是()",
-"选项A": "高度相关的数据",
-"选项B": "低度相关的数据",
-"选项C": "定性数据",
-"选项D": "定量数据",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "Maximum Likelihood Estimate，简记为MLE，称之为()",
-"选项A": "最大似然估计",
-"选项B": "点估计",
-"选项C": "矩估计",
-"选项D": "最小二乘法",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "为研究北京市城镇居民的收入状况，在北京市城镇居民中随机抽取800户进行调查，计算取得其户均月收入为8180元。此户均月收入属于()",
-"选项A": "参数",
-"选项B": "统计量",
-"选项C": "整体均值",
-"选项D": "样本容量",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "依照调查人员的体会或某些有观点的专家选定样本的抽样技术，属于()",
-"选项A": "任意抽样",
-"选项B": "判定抽样",
-"选项C": "配额抽样",
-"选项D": "系统抽样",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "以下说法对图形好坏表述不正确的选项是()",
-"选项A": "好的图形应当是精心设计、有助于洞察问题的实质",
-"选项B": "好的图形应当表述客户的真实需求",
-"选项C": "好的图形应当表述数据的真实情形",
-"选项D": "好的图形应当使复杂的观点取得简明确切高效的表述",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "变量x与y之间的负相关是指()",
-"选项A": "x数值增大时y值也随之增大",
-"选项B": "x数值减少时y值也随之减少",
-"选项C": "x数值增大（或减少）时y值也随之减少（或增大）",
-"选项D": "y的取值几乎不受x取值的阻碍",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "统计调查的调查时刻是指()",
-"选项A": "调查资料所属的时刻",
-"选项B": "调查工作的整个期限",
-"选项C": "对调查单位情形进行记录的时刻",
-"选项D": "调查任务的布置时刻",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "以下的调查中，不属于神秘购物法的是()",
-"选项A": "给客户打电话依照内容估量所同意的效劳水平",
-"选项B": "通过购物对百货公司的优势和薄弱环节进行评估",
-"选项C": "通过与保险公司推销员讨论保险产品评判员工的专业性",
-"选项D": "由被调查者完成一个关于购物的故事从中看出其态度和情感",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "变异系数排除()",
-"选项A": "指标数值大小的阻碍",
-"选项B": "整体单位数多少的阻碍",
-"选项C": "标志变异程度的阻碍",
-"选项D": "平均水平高低的阻碍",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "多重比较经常使用的方式是()",
-"选项A": "Levene-F查验",
-"选项B": "LSD-t查验",
-"选项C": "Kruskal-Wallis查验",
-"选项D": "Bartlett x²查验法",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "在利用SPSS软件对数据进行分组时，为了实现上限不计入原那么，应按如下哪一种顺序依次设定各组的界限()",
-"选项A": "从低到高",
-"选项B": "从高到低",
-"选项C": "从易到难",
-"选项D": "不管按什么顺序对结果没阻碍",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "依照变量观看结果将观看值聚为不同的类，其目的是()",
-"选项A": "使类间距离尽可能近、类内点间距离尽可能远",
-"选项B": "使类间距离尽可能远、类内点间距离尽可能近",
-"选项C": "使类间距离与类内距离都尽可能近",
-"选项D": "使类间距离与类内距离都尽可能远",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "从调查记录时刻是不是持续来看，我国第六次全国人口普查属于()",
-"选项A": "重点调查",
-"选项B": "典型调查",
-"选项C": "持续调查",
-"选项D": "一次性调查",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "业主为避免投标者随意撤标或拒签正式合同而设置的保证金为()",
-"选项A": "投标保证金",
-"选项B": "履约保证金",
-"选项C": "担保保证金",
-"选项D": "签约保证金",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "调查访问员的工作主若是()",
-"选项A": "项目联系",
-"选项B": "现场访问",
-"选项C": "调查结果复核",
-"选项D": "调查报告撰写",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "为了调查购车摇号政策对汽车制造商的阻碍，对规模较大的制造厂商进行了调研，那么此调查为()",
-"选项A": "简单随机抽样",
-"选项B": "系统抽样",
-"选项C": "重点调查",
-"选项D": "典型调查",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "市场调查最重要的原那么是()",
-"选项A": "真实性和准确性",
-"选项B": "全面性和系统性",
-"选项C": "经济性和艺术性",
-"选项D": "时效性和科学性",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "统计调查按组织方式的不同能够分为()",
-"选项A": "统计报表和专门调查",
-"选项B": "常常性调查和一次性调查",
-"选项C": "按期调查和不按期调查",
-"选项D": "全面调查和非全面调查",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "核心小组访谈源于()",
-"选项A": "生物学的社会群体鼓励",
-"选项B": "生物学的社会群体疗法",
-"选项C": "神经病医生所用的群体疗法",
-"选项D": "神经病医生所用的个人鼓励",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "某公司三月末职工人数为2510人、四月末为2590人、五月末为2614人、六月末为2608人，那么该公司第二季度平均人数为()",
-"选项A": "2588人",
-"选项B": "2590人",
-"选项C": "2608人",
-"选项D": "2614人",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "以下哪项不符合问卷设计的一样原那么()",
-"选项A": "容易回答的问题放在前面",
-"选项B": "能够依照时刻顺序排列",
-"选项C": "灵敏性问题放在后面",
-"选项D": "开放式问题在前、封锁式问题在后",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "一般而言，对潜在供给者、可供商品的质量、品种、规格、供给弹性的分析属于()",
-"选项A": "市场商品供给分析",
-"选项B": "市场商品需求分析",
-"选项C": "供求关系分析",
-"选项D": "特殊的供求现象分析",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "三名学生期末统计学考试成绩别离为80分、85分和92分，这三个数字是()",
-"选项A": "变量",
-"选项B": "指标",
-"选项C": "标志值",
-"选项D": "标志",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "当峰度系数值等于0时，次数散布曲线为()",
-"选项A": "标准峰度",
-"选项B": "平顶峰度",
-"选项C": "尖顶峰度",
-"选项D": "U型散布",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "既能够反映数据散布状况，又能维持数据原始状况的图形是()",
-"选项A": "直方图",
-"选项B": "饼图",
-"选项C": "累计散布曲线图",
-"选项D": "茎叶图",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "依照()，量表类型能够划分为类别量表、顺序量表、等距量表和等比量表",
-"选项A": "测量尺度",
-"选项B": "问题性质",
-"选项C": "答案数量",
-"选项D": "调查方式",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "时刻数列中，各个指标数值能够直接相加的是()",
-"选项A": "时点数列",
-"选项B": "时期数列",
-"选项C": "相对数时刻数列",
-"选项D": "平均数时刻数列",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "实验法具有较高的科学性，是因为()",
-"选项A": "它能取得准确的资料",
-"选项B": "市场环境能够操纵",
-"选项C": "它能证明实验变量是不是等于目标变量",
-"选项D": "它能证明实验变量与目标变量之间是不是存在因果关系",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "访谈调查法能够分为定量调查方式和定性调查方式，以下不属于定量调查方式的是()",
-"选项A": "访问调查",
-"选项B": "座谈会",
-"选项C": "电脑辅助调查",
-"选项D": "邮寄调查",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "在现场操纵中，整个项目成功与否的关键是()",
-"选项A": "时刻计划",
-"选项B": "费用预算",
-"选项C": "人员利用",
-"选项D": "进程记录",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "你购买衣服通常在哪里？A百货商店、B超市、C街边小店、D大卖场，如此的问句属于()",
-"选项A": "开放式问题",
-"选项B": "封锁式问题",
-"选项C": "动机性问题",
-"选项D": "态度性问题",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "数据审核中的逻辑检查是指()",
-"选项A": "依照已有体会判定数据的真实准确",
-"选项B": "依照调查项目之间的内在联系和实际情形看是不是有前后矛盾的地址",
-"选项C": "通过加总对照各相关指标检查数字有无错误",
-"选项D": "检查调查表各项目是不是填写完整",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "以下陈述中，不属于观观点缺点的是()",
-"选项A": "只能反映客观事实的发生通过、不能说明发生的缘故和动机",
-"选项B": "容易受语言交流或人际交往可能发生的误解的阻碍",
-"选项C": "调查时刻比较长、调查经费支出大",
-"选项D": "对调查人员的业务水平要求较高",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "市场调查在产品的投入期的要紧作用是()",
-"选项A": "确认需求",
-"选项B": "改良产品运营",
-"选项C": "计划下一步行动",
-"选项D": "让产品起飞上升",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "某企业生产某种产品的产量每一年增加10万吨，那么该产品产量的环比增长速度()",
-"选项A": "年年增加",
-"选项B": "年年下降",
-"选项C": "年年维持不变",
-"选项D": "无法得出结论",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "问卷调查结果能够测量其理论特点，即问卷调查结果与理论预期一致，那么以为该问卷具有()",
-"选项A": "内容效度",
-"选项B": "准则效度",
-"选项C": "建构效度",
-"选项D": "预期效度",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "主成份分析中，仅仅对一个原始变量有作用的主成份称为()",
-"选项A": "单一成份",
-"选项B": "独立成份",
-"选项C": "特殊成份",
-"选项D": "公共成份",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "聚类分析包括哪两种类型()",
-"选项A": "指标之间的聚类和变量之间的聚类",
-"选项B": "变量之间的聚类和样品之间的聚类",
-"选项C": "样品之间的聚类和整体之间的聚类",
-"选项D": "指标之间的聚类和整体之间的聚类",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "在()的情形下，历时刻序列预测法才能收到较好的成效",
-"选项A": "序列的转变趋势比较明显且不同较大、长期预测",
-"选项B": "序列的转变趋势比较明显且不同较小、长期预测",
-"选项C": "序列的转变趋势比较明显且不同较大、短时刻预测",
-"选项D": "序列的转变趋势比较明显且不同较小、短时刻预测",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "关于棉花、茶叶等集中产区的农作物的生长情形进行调查，适宜采纳()方式",
-"选项A": "市场普查",
-"选项B": "重点市场调查",
-"选项C": "典型市场调查",
-"选项D": "随机市场调查",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "下面关于设计效应的表达，错误的选项是()",
-"选项A": "简单随机抽样的设计效应等于1",
-"选项B": "整群抽样的设计效应大于1",
-"选项C": "分层抽样的设计效应大于1",
-"选项D": "多时期抽样的设计效应大于1",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "提出开展市场调研任务和要求，并承担开展市场调研费用的是()",
-"选项A": "开展市场调研者",
-"选项B": "被调查者",
-"选项C": "开展市场调研的委托方",
-"选项D": "政府部门",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "以下方式属于概率抽样调查的是()",
-"选项A": "重点调查",
-"选项B": "整群抽样",
-"选项C": "典型调查",
-"选项D": "配额抽样",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "实地调查方式不包括()",
-"选项A": "案头调查",
-"选项B": "询问法",
-"选项C": "观观点",
-"选项D": "实验法",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "时刻数列分析中线性趋势模型的简化计算方式所利用的原理是()",
-"选项A": "Σt=1",
-"选项B": "Σt=0",
-"选项C": "ΣY=1",
-"选项D": "ΣY=0",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "以下能够反映定类数据的位置集中趋势是()",
-"选项A": "算术平均数",
-"选项B": "调和平均数",
-"选项C": "众数",
-"选项D": "几何平均数",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "通过调查将本企业的现有条件与竞争对手进行对照，从而为制定有效的竞争策略提供依据，这表现了()的重要性",
-"选项A": "广告调查",
-"选项B": "销售渠道调查",
-"选项C": "商品实体和包装调查",
-"选项D": "竞争对手状况调查",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "《招标投标法》第24条规定：依法必需进行招标的项目，自招标文件开始发放之日起至投标人提交投标文件截止之日止，最短不得少于()日",
-"选项A": "10",
-"选项B": "15",
-"选项C": "20",
-"选项D": "7",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "某外资企业为了开拓中国市场，针对中国政府的经济政策、法律政策、GDP增速、社会文化、科技、自然环境等进行的调查属于()调查",
-"选项A": "消费者",
-"选项B": "宏观营销环境",
-"选项C": "竞争对手",
-"选项D": "渠道调查",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "反映均值代表性大小的离散程度的统计量有()",
-"选项A": "异众比",
-"选项B": "方差",
-"选项C": "级差",
-"选项D": "四分位差",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "设计调查方案的大体步骤包括：确信调查目标、确信调查对象和调查单位、确信调查内容和调查问卷、确信调查方式和方式、确信资料整理方式、确信调查经费预算、确信调查组织打算和()",
-"选项A": "确信调查人员",
-"选项B": "确信统计分析方式",
-"选项C": "确信样本数量",
-"选项D": "确信调查时刻和进度",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "相关于核心小组访谈法来讲，深层访谈法的优势是()",
-"选项A": "能够产生受访者之间的观点的彼此碰撞",
-"选项B": "不易受调查员自身素养高低的阻碍",
-"选项C": "便于对一些保密、灵敏问题进行调查",
-"选项D": "结构化问题使得访谈结果更易于说明和分析",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "小王搜集了1978年以来历年我国人均GDP与人均消费额的资料，若是要反映这一时期我国生产与消费的关系，用什么图形最为适合？()",
-"选项A": "饼图",
-"选项B": "直方图",
-"选项C": "散点图",
-"选项D": "折线图",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "进行主成份分析的前提条件是，各变量之间应该()",
-"选项A": "彼此独立",
-"选项B": "低度相关",
-"选项C": "高度相关",
-"选项D": "完全相关",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "调查员和受访者在轻松自然的气氛中围绕某一问题进行深切的一对一的讨论，这种调查方式是()",
-"选项A": "核心小组访谈法",
-"选项B": "深层访谈法",
-"选项C": "德尔菲法",
-"选项D": "顾客观观点",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "关于某个要调查的灵敏性问题，列出正反两个问题，由被调查从中随机抽取一个来回答，这种调查方式是()",
-"选项A": "随机化回答方式",
-"选项B": "简单随机抽样方式",
-"选项C": "转移方式",
-"选项D": "假定方式",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "主成份分析中，各主成份之间的关系是()",
-"选项A": "彼此独立",
-"选项B": "低度相关",
-"选项C": "高度相关",
-"选项D": "完全相关",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "应用的前提条件之一是各判别变量必需是定量变量，而且要求观看值数量()",
-"选项A": "大于等于变量加1的个数",
-"选项B": "小于变量加1的个数",
-"选项C": "大于等于变量加2的个数",
-"选项D": "小于变量加2的个数",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "以下调查方式中，不属于定量调查方式的是()",
-"选项A": "调查",
-"选项B": "面访调查",
-"选项C": "邮寄调查",
-"选项D": "核心小组访谈",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "探讨性调查的资料来源通常不包括以下哪个方面()",
-"选项A": "二手资料",
-"选项B": "请教有关专家",
-"选项C": "以往类似的实例",
-"选项D": "发放问卷搜集的数据",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "审核数据准确性的方式要紧有逻辑检查和()",
-"选项A": "计算检查",
-"选项B": "查表检查",
-"选项C": "文字检查",
-"选项D": "方式检查",
-"正确答案": "选项A",
-"解析": ""
-},
-{
-"题目": "以下关于非概率抽样的表达，错误的选项是()",
-"选项A": "非概率抽样抽取样本时不遵循随机原那么",
-"选项B": "非概率抽样无法明白样本统计量的散布",
-"选项C": "非概率抽样估量结果的精准性能够用抽样误差来衡量",
-"选项D": "非概率抽样的最大特点是操作简便、时效快、本钱低",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "搜集整理统计资料，应当以周期性普查为基础，以常常性抽样调查为主体，综合运用()方式，并充分利用行政记录等资料",
-"选项A": "统计月报综合分析",
-"选项B": "统计分析全面调查",
-"选项C": "全面调查综合分析",
-"选项D": "全面调查重点调查",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "以下陈述中，哪一项不是量表的优势()",
-"选项A": "能够对被调查者回答的强度进行测量",
-"选项B": "对被调查者的经历和回答能力要求较低",
-"选项C": "量表问题能够利用一些更高级的统计分析工具",
-"选项D": "将被调查者的回答直接转换成数字、这些数字直接用于编码",
-"正确答案": "选项B",
-"解析": ""
-},
-{
-"题目": "抽样调查与典型调查的最要紧区别是()",
-"选项A": "灵活机动程度不同",
-"选项B": "涉及的调查范围不同",
-"选项C": "对所研究整体推算方式不同",
-"选项D": "选择调查单位的方式不同",
-"正确答案": "选项D",
-"解析": ""
-},
-{
-"题目": "计算进展速度的分母是()",
-"选项A": "实际水平",
-"选项B": "打算水平",
-"选项C": "基期水平",
-"选项D": "报告期水平",
-"正确答案": "选项C",
-"解析": ""
-},
-{
-"题目": "以下调查项目中适合采纳德尔菲法的是()",
-"选项A": "调查超市选址时应该考虑的重要变量",
-"选项B": "调查消费者对某产品的熟悉和购买行为",
-"选项C": "调查农村留守儿童的学习情形",
-"选项D": "调查房地产公司高层治理者对竞争者的观点",
-"正确答案": "选项D",
-"解析": ""
-}
-    ];
-
-    // 全局变量
-    let allQuestions = [];
-    let wrongBook = [];
-    let isWrongMode = false;
-    let currentIndex = 0;
-    let score = 0;
-    let answered = false;
-
-    // 初始化
-    window.onload = function() {
-        // 读取 API Key
-        document.getElementById('api-key').value = localStorage.getItem('deepseek_api_key') || '';
-        
-        // 读取错题本和导入的题库
-        const savedWrong = localStorage.getItem('wrong_book');
-        if (savedWrong) wrongBook = JSON.parse(savedWrong);
-
-        const importedQs = localStorage.getItem('imported_questions');
-        let importedQuestions = importedQs ? JSON.parse(importedQs) : [];
-
-	// 恢复做题进度
-	const savedIdx = localStorage.getItem('quiz_currentIndex');
-	const savedScr = localStorage.getItem('quiz_score');
-	if (savedIdx !== null) currentIndex = parseInt(savedIdx);
-	if (savedScr !== null) score = parseInt(savedScr);
-
-        // 合并题库：默认 + 导入
-        allQuestions = [...defaultQuestions, ...importedQuestions];
-        
-        // 渲染第一题
-        renderQuestion();
-    };
-
-    // 保存 API Key
-    function saveApiKey() {
-        localStorage.setItem('deepseek_api_key', document.getElementById('api-key').value.trim());
-    }
-
-    // 获取当前要展示的题目列表
-    function getCurrentList() {
-        return isWrongMode ? wrongBook : allQuestions;
-    }
-
-    // 渲染题目
-    function renderQuestion() {
-        const list = getCurrentList();
-        const quizArea = document.getElementById('quiz-area');
-        const emptyState = document.getElementById('empty-state');
-        const submitBtn = document.getElementById('submit-btn');
-        const nextBtn = document.getElementById('next-btn');
-        const expBox = document.getElementById('explanation-box');
-
-        if (list.length === 0 || currentIndex >= list.length) {
-            if (isWrongMode && list.length === 0) {
-                quizArea.classList.add('hidden');
-                emptyState.classList.remove('hidden');
-            } else if (!isWrongMode && currentIndex >= list.length) {
-                document.getElementById('question-text').innerText = "🎉 恭喜你，刷完了所有题目！";
-                document.getElementById('options-container').innerHTML = "";
-                submitBtn.classList.add('hidden');
-                nextBtn.classList.add('hidden');
-            }
-            return;
-        }
-
-        quizArea.classList.remove('hidden');
-        emptyState.classList.add('hidden');
-
-        const q = list[currentIndex];
-        document.getElementById('progress-text').innerText = `进度: ${currentIndex + 1} / ${list.length} ${isWrongMode ? '(错题)' : ''}`;
-        document.getElementById('score-text').innerText = `得分: ${score}`;
-        document.getElementById('question-text').innerText = q["题目"];
-        
-        // 渲染选项
-        const optionsContainer = document.getElementById('options-container');
-        optionsContainer.innerHTML = '';
-        ['A', 'B', 'C', 'D'].forEach(opt => {
-            if (q[`选项${opt}`]) {
-                const label = document.createElement('label');
-                label.innerHTML = `<input type="radio" name="answer" value="${opt}"> ${opt}. ${q[`选项${opt}`]}`;
-                optionsContainer.appendChild(label);
-            }
-        });
-
-        // 重置状态
-        answered = false;
-        submitBtn.classList.remove('hidden');
-        nextBtn.classList.add('hidden');
-        expBox.style.display = 'none';
-        expBox.innerHTML = '';
-    }
-
-    // 提交答案
-    async function submitAnswer() {
-        if (answered) return;
-        const selected = document.querySelector('input[name="answer"]:checked');
-        if (!selected) {
-            alert("请先选择一个选项！");
-            return;
-        }
-
-        answered = true;
-        const userAnswer = selected.value;
-        const q = getCurrentList()[currentIndex];
-        const correctAnswer = String(q["正确答案"]).replace('选项', '').trim();
-        const expBox = document.getElementById('explanation-box');
-        
-        // 禁用选项
-        document.querySelectorAll('input[name="answer"]').forEach(input => input.disabled = true);
-        
-        document.getElementById('submit-btn').classList.add('hidden');
-        document.getElementById('next-btn').classList.remove('hidden');
-        expBox.style.display = 'block';
-
-        // 判断对错
-        if (userAnswer === correctAnswer) {
-            score += 10;
-            expBox.innerHTML = `<strong>✅ 回答正确！</strong><br><br>`;
-            // 如果是错题本模式，答对了就移出错题本
-            if (isWrongMode) {
-                removeFromWrongBook(q["题目"]);
-            }
-        } else {
-            expBox.innerHTML = `<strong>❌ 回答错误。正确答案是：${correctAnswer}</strong><br><br>`;
-            // 如果不是错题本模式，加入错题本
-            if (!isWrongMode) {
-                addToWrongBook(q);
-            }
-        }
-
-        document.getElementById('score-text').innerText = `得分: ${score}`;
-			if (!isWrongMode) {
-  			  localStorage.setItem('quiz_score', score);
-		}
-        // 调用 API 生成解析
-        const apiKey = document.getElementById('api-key').value.trim();
-        if (apiKey) {
-            expBox.innerHTML += `<em>🤖 AI 老师正在思考中...</em>`;
             try {
-                const aiText = await fetchDeepSeekExplanation(apiKey, q, userAnswer);
-                expBox.innerHTML = `<strong>${userAnswer === correctAnswer ? '✅ 回答正确！' : '❌ 回答错误。正确答案是：' + correctAnswer}</strong><br><br><strong>AI 解析：</strong><br>${aiText}`;
+                const response = await fetch('https://api.deepseek.com/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                    body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'user', content: 'hi' }], max_tokens: 1 })
+                });
+                if (!response.ok) throw new Error("连接失败");
+                light.className = "w-3 h-3 rounded-full bg-green-500 shadow-inner";
+                btn.innerText = "连接成功";
             } catch (e) {
-                expBox.innerHTML += `<br><span style="color:red">AI 调用失败：${e.message}</span>`;
+                light.className = "w-3 h-3 rounded-full bg-red-500 shadow-inner";
+                btn.innerText = "连接失败";
             }
-        } else {
-            expBox.innerHTML += `<br><em>提示：填入 API Key 可获得 AI 详细解析。原解析：${q["解析"] || '无'}</em>`;
         }
-    }
 
-    // 下一题
-   function nextQuestion() {
-    currentIndex++;
-    if (!isWrongMode) {
-        localStorage.setItem('quiz_currentIndex', currentIndex);
-    }
-    renderQuestion();
-}
-    // 错题本逻辑
-    function addToWrongBook(q) {
-        const exists = wrongBook.find(item => item["题目"] === q["题目"]);
-        if (!exists) {
-            wrongBook.push(q);
-            localStorage.setItem('wrong_book', JSON.stringify(wrongBook));
-        }
-    }
-
-    function removeFromWrongBook(questionText) {
-        wrongBook = wrongBook.filter(item => item["题目"] !== questionText);
-        localStorage.setItem('wrong_book', JSON.stringify(wrongBook));
-    }
-
-    function clearWrongBook() {
-        if (confirm("确定要清空错题本吗？")) {
-            wrongBook = [];
-            localStorage.setItem('wrong_book', JSON.stringify(wrongBook));
-            if (isWrongMode) toggleMode();
-        }
-    }
-
-    // 切换模式
-    function toggleMode() {
-        isWrongMode = !isWrongMode;
-        if (!isWrongMode) {
-    		currentIndex = parseInt(localStorage.getItem('quiz_currentIndex')) || 0;
-    		score = parseInt(localStorage.getItem('quiz_score')) || 0;
-		} else {
-    		currentIndex = 0;
-   		 	score = 0;
-		}
-        
-        const btn = document.getElementById('toggle-mode-btn');
-        const clearBtn = document.getElementById('clear-wrong-btn');
-        const title = document.getElementById('mode-title');
-
-        if (isWrongMode) {
-            btn.innerText = "📚 返回全部题库";
-            btn.className = "btn-primary";
-            clearBtn.classList.remove('hidden');
-            title.innerText = "❌ 我的错题本";
-        } else {
-            btn.innerText = "❌ 查看错题本";
-            btn.className = "btn-outline";
-            clearBtn.classList.add('hidden');
-            title.innerText = "📝 市场调查 · 在线刷题";
-        }
-        renderQuestion();
-    }
-
-    // CSV 导入逻辑
-    document.getElementById('csv-upload').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                if (results.data.length > 0) {
-                    // 存入 localStorage
-                    let importedQs = JSON.parse(localStorage.getItem('imported_questions') || '[]');
-                    importedQs = importedQs.concat(results.data);
-                    localStorage.setItem('imported_questions', JSON.stringify(importedQs));
-                    
-                    // 重新加载合并题库
-                    allQuestions = [...defaultQuestions, ...importedQs];
-                    alert(`成功导入 ${results.data.length} 道题！`);
-                    
-                    if (!isWrongMode) {
-                        currentIndex = 0;
-                        renderQuestion();
-                    }
+        function typeWriter(element, htmlText, speed = 30) {
+            let i = 0;
+            element.innerHTML = "";
+            const timer = setInterval(() => {
+                element.innerHTML = htmlText.substring(0, i) + '<span class="cursor-blink"></span>';
+                i++;
+                if (i > htmlText.length) {
+                    clearInterval(timer);
+                    element.innerHTML = htmlText; 
                 }
-            },
-            error: function(error) {
-                alert("CSV 解析失败：" + error.message);
-            }
-        });
-        // 清空 input 允许重复上传同一个文件
-        this.value = '';
-    });
-
-    // 调用 DeepSeek API
-    async function fetchDeepSeekExplanation(apiKey, question, userAnswer) {
-        const prompt = `题目：${question["题目"]}\n选项：A.${question["选项A"]} B.${question["选项B"]} C.${question["选项C"]} D.${question["选项D"]}\n正确答案：${question["正确答案"]}\n用户选择了：${userAnswer}。\n请用大约100字解释这道题为什么选正确答案，并指出易错点。`;
-        
-        const response = await fetch("https://api.deepseek.com/chat/completions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-                model: "deepseek-chat",
-                messages: [{ role: "user", content: prompt }],
-                temperature: 0.7
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error("请求失败，请检查 API Key");
+                document.getElementById('chatHistory').scrollTop = document.getElementById('chatHistory').scrollHeight;
+            }, speed);
         }
 
-        const data = await response.json();
-        return data.choices[0].message.content;
-    }
-</script>
+        function quickSend(text) {
+            if (document.getElementById('securityModal').classList.contains('hidden')) {
+                document.getElementById('userInput').value = text;
+                sendMessage();
+            }
+        }
+
+        function appendMessage(role, text, isTyping = false) {
+            const chatHistory = document.getElementById('chatHistory');
+            const isAi = role === 'ai';
+            const avatarClass = isAi ? 'bg-pink-100 text-pink-500 border border-pink-200' : 'bg-blue-100 text-blue-500 border border-blue-200';
+            const bubbleClass = isAi ? 'bubble-ai' : 'bubble-user';
+            const name = isAi ? '王' : '我';
+            const alignClass = isAi ? '' : 'flex-row-reverse';
+            const msgId = 'msg-' + Date.now();
+
+            const html = `
+                <div class="flex gap-3 ${alignClass} fade-in">
+                    <div class="w-8 h-8 rounded-full ${avatarClass} flex-shrink-0 flex items-center justify-center text-xs">${name}</div>
+                    <div id="${msgId}" class="${bubbleClass} p-3 text-sm leading-relaxed max-w-[85%] shadow-sm">
+                        ${isTyping ? '' : text}
+                    </div>
+                </div>
+            `;
+            chatHistory.insertAdjacentHTML('beforeend', html);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            return { id: msgId };
+        }
+
+        function hideAllPanels() {
+            document.getElementById('emptyState').classList.add('hidden');
+            ['bill', 'subscription', 'salary', 'card'].forEach(p => {
+                const el = document.getElementById('panel-' + p);
+                if(el) { el.classList.add('hidden'); el.classList.remove('flex'); }
+            });
+        }
+
+        async function sendMessage() {
+            if (isProcessing || !document.getElementById('securityModal').classList.contains('hidden')) return;
+            
+            const input = document.getElementById('userInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            input.value = '';
+            appendMessage('user', text);
+
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) return appendMessage('ai', "少爷，请先在右上角填入 API Key！");
+
+            isProcessing = true;
+            const loadingMsg = appendMessage('ai', '<span class="text-slate-400 animate-pulse">王妈正在查阅台账...</span>');
+
+            try {
+                // 核心升级：要求大模型直接计算出分配方案（salary_plan）
+                const prompt = `你现在是私人银行管家“王妈”。分析用户输入，严格返回如下 JSON 格式：
+                {"intent": "bill|subscription|salary|lock_card|transfer|birthday|chat", "reply": "你的回复", "target": "转账对象", "amount": 金额, "salary_total": 总金额数字, "salary_plan": [{"name":"项目名", "percent":百分比数字, "amount":金额数字}]}
+                
+                【意图判定规则】：
+                1. 查账单 -> "bill"
+                2. 查扣费/自动续费 -> "subscription"
+                3. 提到“发工资”、“规划” -> "salary"。此时你必须从用户输入中提取或估算出总金额填入"salary_total"，并为你设计一个合理的"salary_plan"（如：储蓄40%、日常30%、备用20%、娱乐10%）。
+                4. 提到“锁卡”、“冻结” -> "lock_card"
+                5. 其他闲聊 -> "chat"
+                
+                用户输入：${text}`;
+
+                const response = await fetch('https://api.deepseek.com/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                    body: JSON.stringify({
+                        model: 'deepseek-chat',
+                        messages: [{ role: 'user', content: prompt }],
+                        response_format: { type: 'json_object' } 
+                    })
+                });
+
+                if (!response.ok) throw new Error("API 请求失败");
+                const data = await response.json();
+                let rawContent = data.choices[0].message.content.trim();
+                if (rawContent.startsWith('```json')) rawContent = rawContent.replace(/^```json/, '').replace(/```$/, '').trim();
+                
+                const result = JSON.parse(rawContent);
+                document.getElementById(loadingMsg.id).parentElement.remove();
+
+                const replyMsg = appendMessage('ai', '', true);
+                typeWriter(document.getElementById(replyMsg.id), result.reply, 40);
+
+                hideAllPanels();
+
+                if (result.intent === 'bill') {
+                    document.getElementById('panelTitle').innerText = "资产与账单看板";
+                    document.getElementById('panel-bill').classList.remove('hidden');
+                    document.getElementById('panel-bill').classList.add('flex');
+                    showChart();
+                } else if (result.intent === 'subscription') {
+                    document.getElementById('panelTitle').innerText = "全网代扣监控中心";
+                    document.getElementById('panel-subscription').classList.remove('hidden');
+                    document.getElementById('panel-subscription').classList.add('flex');
+                } else if (result.intent === 'salary') {
+                    document.getElementById('panelTitle').innerText = "发薪日资金规划";
+                    document.getElementById('panel-salary').classList.remove('hidden');
+                    document.getElementById('panel-salary').classList.add('flex');
+                    // 动态渲染工资分配条
+                    renderSalaryPlan(result.salary_total, result.salary_plan);
+                } else if (result.intent === 'lock_card') {
+                    document.getElementById('panelTitle').innerText = "赛博联名卡管理";
+                    document.getElementById('panel-card').classList.remove('hidden');
+                    document.getElementById('panel-card').classList.add('flex');
+                } else if (result.intent === 'transfer' || result.intent === 'birthday') {
+                    document.getElementById('emptyState').classList.remove('hidden'); 
+                    openModal(result.intent, result.target, result.amount);
+                } else {
+                    document.getElementById('emptyState').classList.remove('hidden');
+                }
+
+            } catch (error) {
+                document.getElementById(loadingMsg.id).parentElement.remove();
+                appendMessage('ai', `<span class="text-red-500">王妈脑子卡壳了，请检查网络或 Key。</span>`);
+            } finally {
+                isProcessing = false;
+            }
+        }
+
+        // 动态渲染工资规划
+        function renderSalaryPlan(total, plan) {
+            total = total || 10000;
+            document.getElementById('salary-total-display').innerText = `¥ ${total.toLocaleString()}`;
+            
+            const barsContainer = document.getElementById('salary-bars');
+            barsContainer.innerHTML = '';
+            
+            if (!plan || plan.length === 0) {
+                plan = [
+                    { name: '强制储蓄', percent: 40, amount: total * 0.4 },
+                    { name: '日常开销', percent: 30, amount: total * 0.3 },
+                    { name: '备用应急', percent: 20, amount: total * 0.2 },
+                    { name: '娱乐犒劳', percent: 10, amount: total * 0.1 }
+                ];
+            }
+
+            const colors = ['bg-blue-500', 'bg-pink-400', 'bg-slate-400', 'bg-yellow-400'];
+            const textColors = ['text-blue-600', 'text-pink-500', 'text-slate-600', 'text-yellow-500'];
+
+            plan.forEach((item, index) => {
+                const c = colors[index % colors.length];
+                const tc = textColors[index % textColors.length];
+                const html = `
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="font-bold ${tc}">${item.percent}% ${item.name}</span>
+                            <span class="${tc} font-bold">¥ ${item.amount.toLocaleString()}</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2">
+                            <div class="${c} h-2 rounded-full" style="width: ${item.percent}%"></div>
+                        </div>
+                    </div>
+                `;
+                barsContainer.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function showChart() {
+            if (!myChart) myChart = echarts.init(document.getElementById('mainChart'));
+            myChart.setOption({
+                tooltip: { trigger: 'item' },
+                legend: { bottom: 5, textStyle: { fontFamily: 'KaiTi' } },
+                color: ['#3B82F6', '#EC4899', '#93C5FD', '#F9A8D4', '#60A5FA'],
+                series: [{ type: 'pie', radius: ['45%', '70%'], itemStyle: { borderColor: '#fff', borderWidth: 2 }, label: { show: false },
+                    data: [{ value: 2500, name: '网购剁手' }, { value: 1500, name: '餐饮外卖' }, { value: 300, name: '通勤打车' }, { value: 800, name: '娱乐游戏' }]
+                }]
+            });
+        }
+
+        function toggleCardLock(checkbox) {
+            if (checkbox.checked) {
+                appendMessage('ai', "🔒 少爷！王妈已经帮您把交易安全锁打开了。这下不管是半夜冲动还是被盗刷，一分钱都花不出去，没有冲动花钱的风险！");
+            } else {
+                appendMessage('ai', "🔓 少爷，安全锁已解开，您又可以愉快地花钱了。不过王妈还是提醒您，虽然您是华尔街一匹狼，花钱也要有节制哦。");
+            }
+        }
+
+        function openModal(type, target, amount) {
+            const modal = document.getElementById('securityModal');
+            const actionText = document.getElementById('modalActionText');
+            const amountBox = document.getElementById('modalAmountBox');
+            
+            if (type === 'transfer') {
+                actionText.innerHTML = `向 <b class="text-blue-600">${target || '对方'}</b> 发起转账`;
+                amountBox.classList.remove('hidden');
+                document.getElementById('modalAmount').innerText = (amount || 100).toFixed(2);
+            }
+            if (type === 'birthday') {
+                actionText.innerHTML = `<b class="text-pink-500">生日联动</b> - 锁定预算`;
+                amountBox.classList.remove('hidden');
+                document.getElementById('modalAmount').innerText = (amount || 1000).toFixed(2);
+            }
+            document.getElementById('modalSubText').innerText = "系统检测到资金变动指令";
+            document.getElementById('mockCode').value = '';
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('securityModal').classList.add('hidden'); }
+
+        function confirmAction(source) {
+            if (source === 'modal') {
+                const code = document.getElementById('mockCode').value;
+                if (!code) return alert("请输入验证码！");
+                closeModal();
+                appendMessage('ai', `✅ <b>【微众沙盒网关】</b>验证通过！流水号：WZ_8848。`);
+            } else if (source === 'salary') {
+                document.getElementById('modalActionText').innerHTML = `<b class="text-blue-500">发薪日强制分配执行</b>`;
+                document.getElementById('modalAmountBox').classList.add('hidden');
+                document.getElementById('modalSubText').innerText = "一键执行资金划转指令";
+                document.getElementById('mockCode').value = '';
+                document.getElementById('securityModal').classList.remove('hidden');
+            }
+        }
+    </script>
 </body>
 </html>
